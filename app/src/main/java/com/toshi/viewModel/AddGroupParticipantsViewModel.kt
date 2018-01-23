@@ -111,7 +111,8 @@ class AddGroupParticipantsViewModel(val groupId: String) : ViewModel() {
         val subscription =
                 Group.fromId(groupId)
                 .map { it.addMembers(selectedParticipants.value) }
-                .flatMapCompletable { sofaMessageManager.updateConversationFromGroup(it) }
+                .map { updateGroupObjects(it) }
+                .flatMapCompletable { sofaMessageManager.updateConversationFromGroup(it.first, it.second) }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { isUpdatingGroup.value = true }
                 .doAfterTerminate { isUpdatingGroup.value = false }
@@ -120,6 +121,18 @@ class AddGroupParticipantsViewModel(val groupId: String) : ViewModel() {
                         { error.value = R.string.add_participants_error }
                 )
         this.subscriptions.add(subscription)
+    }
+
+    private fun updateGroupObjects(group: Group): Pair<Group, Group> {
+        val groupToSave = Group().copy(group)
+        val groupToSend = updateGroupObjectToSend(group)
+        return Pair(groupToSave, groupToSend)
+    }
+
+    private fun updateGroupObjectToSend(group: Group): Group {
+        val groupToSend = Group().copy(group)
+        groupToSend.avatar = null
+        return groupToSend
     }
 
     override fun onCleared() {

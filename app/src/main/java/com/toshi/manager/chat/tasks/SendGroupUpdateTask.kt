@@ -33,7 +33,7 @@ class SendGroupUpdateTask(
                     .withId(Hex.fromStringCondensed(group.id))
                     .withName(group.title)
                     .withMembers(group.memberIds)
-                    .withAvatar(group.avatar.stream)
+                    .withAvatar(group.avatar?.stream)
                     .build()
             val groupDataMessage = SignalServiceDataMessage.newBuilder()
                     .withTimestamp(System.currentTimeMillis())

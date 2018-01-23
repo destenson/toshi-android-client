@@ -63,8 +63,8 @@ class EditGroupViewModel(val groupId: String) : ViewModel() {
                     generateAvatarFromUri(avatarUri),
                     { group, avatar -> Pair(group, avatar) }
                 )
-                .map { updateGroupObject(it.first, it.second, groupName) }
-                .flatMapCompletable { saveUpdatedGroup(it) }
+                .map { updateGroupObjects(it.first, it.second, groupName) }
+                .flatMapCompletable { saveUpdatedGroup(it.first, it.second) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { isUpdatingGroup.value = true }
@@ -76,13 +76,27 @@ class EditGroupViewModel(val groupId: String) : ViewModel() {
         this.subscriptions.add(sub)
     }
 
-    private fun updateGroupObject(group: Group, newAvatar: Bitmap?, groupName: String): Group {
-        newAvatar?.let { group.setAvatar(newAvatar) }
-        group.title = groupName
-        return group
+    private fun updateGroupObjects(group: Group, newAvatar: Bitmap?, groupName: String): Pair<Group, Group> {
+        val groupToSave = updateGroupObjectToSave(group, newAvatar, groupName)
+        val groupToSend = updateGroupObjectToSend(group, newAvatar, groupName)
+        return Pair(groupToSave, groupToSend)
     }
 
-    private fun saveUpdatedGroup(group: Group) = sofaMessageManager.updateConversationFromGroup(group)
+    private fun updateGroupObjectToSave(group: Group, newAvatar: Bitmap?, groupName: String): Group {
+        val groupToSave = Group().copy(group)
+        newAvatar?.let { groupToSave.setAvatar(newAvatar) }
+        groupToSave.title = groupName
+        return groupToSave
+    }
+
+    private fun updateGroupObjectToSend(group: Group, newAvatar: Bitmap?, groupName: String): Group {
+        val groupToSend = Group().copy(group)
+        groupToSend.setAvatar(newAvatar)
+        groupToSend.title = groupName
+        return groupToSend
+    }
+
+    private fun saveUpdatedGroup(groupToSave: Group, groupToSend: Group) = sofaMessageManager.updateConversationFromGroup(groupToSave, groupToSend)
 
     private fun generateAvatarFromUri(avatarUri: Uri?) = ImageUtil.loadAsBitmap(avatarUri, BaseApplication.get())
 

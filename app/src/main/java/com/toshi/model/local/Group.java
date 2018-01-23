@@ -64,6 +64,14 @@ public class Group extends RealmObject {
         this.title = signalServiceGroup.getName().orNull();
     }
 
+    public Group copy(final Group group) {
+        this.id = group.getId();
+        this.title = group.getTitle();
+        this.members = (RealmList<User>) group.getMembers();
+        this.avatar = group.getAvatar();
+        return this;
+    }
+
     public Group addMember(final User member) {
         if (!this.members.contains(member)) this.members.add(member);
         return this;
