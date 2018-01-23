@@ -29,6 +29,7 @@ class NewGroupAvatarTask(
 ) {
 
     fun run(groupId: String, signalGroup: SignalServiceGroup): Completable {
+        if (!signalGroup.avatar.isPresent) return Completable.complete()
         return Avatar
                 .processFromSignalGroup(signalGroup, messageReceiver)
                 .flatMapCompletable { avatar -> conversationStore.saveGroupAvatar(groupId, avatar) }
