@@ -200,22 +200,6 @@ class UserManager {
 
     private fun getTimestamp() = IdService.getApi().timestamp
 
-    fun getTopRatedPublicUsers(limit: Int): Single<List<User>> {
-        return IdService
-                .getApi()
-                .getUsers(true, true, false, limit)
-                .map { it.results }
-                .subscribeOn(Schedulers.io())
-    }
-
-    fun getLatestPublicUsers(limit: Int): Single<List<User>> {
-        return IdService
-                .getApi()
-                .getUsers(true, false, true, limit)
-                .map { it.results }
-                .subscribeOn(Schedulers.io())
-    }
-
     fun webLogin(loginToken: String): Completable {
         return getTimestamp()
                 .flatMapCompletable { webLoginWithTimestamp(loginToken, it) }

@@ -31,6 +31,7 @@ import rx.subscriptions.CompositeSubscription
 
 class BrowseViewModel : ViewModel() {
 
+    private val recipientManager by lazy { BaseApplication.get().recipientManager }
     private val subscriptions by lazy { CompositeSubscription() }
 
     val search by lazy { SingleLiveEvent<List<ToshiEntity>>() }
@@ -73,7 +74,7 @@ class BrowseViewModel : ViewModel() {
     private fun getAppManager() = BaseApplication.get().appsManager
 
     private fun fetchTopRatedPublicUsers() {
-        val sub = getUserManager()
+        val sub = recipientManager
                 .getTopRatedPublicUsers(10)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -85,7 +86,7 @@ class BrowseViewModel : ViewModel() {
     }
 
     private fun fetchLatestPublicUsers() {
-        val sub = getUserManager()
+        val sub = recipientManager
                 .getLatestPublicUsers(10)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -96,11 +97,9 @@ class BrowseViewModel : ViewModel() {
         this.subscriptions.add(sub)
     }
 
-    private fun getUserManager() = BaseApplication.get().userManager
-
     fun runSearchQuery(query: String) {
         if (query.isEmpty()) return
-        val sub = getRecipientManager()
+        val sub = recipientManager
                 .searchOnlineUsersAndApps(query)
                 .observeOn(AndroidSchedulers.mainThread())
                 .map { users -> ArrayList<ToshiEntity>(users) }
@@ -111,8 +110,6 @@ class BrowseViewModel : ViewModel() {
 
         this.subscriptions.add(sub)
     }
-
-    private fun getRecipientManager() = BaseApplication.get().recipientManager
 
     override fun onCleared() {
         super.onCleared()

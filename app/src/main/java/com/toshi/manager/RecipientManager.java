@@ -247,6 +247,22 @@ public class RecipientManager {
                 .toCompletable();
     }
 
+    public Single<List<User>> getTopRatedPublicUsers(final int limit) {
+        return IdService
+                .getApi()
+                .getUsers(true, true, false, limit)
+                .map(UserSearchResults::getResults)
+                .subscribeOn(Schedulers.io());
+    }
+
+    public Single<List<User>> getLatestPublicUsers(final int limit) {
+        return IdService
+                .getApi()
+                .getUsers(true, false, true, limit)
+                .map(UserSearchResults::getResults)
+                .subscribeOn(Schedulers.io());
+    }
+
     public Single<ServerTime> getTimestamp() {
         return IdService
                 .getApi()

@@ -25,7 +25,7 @@ import android.support.v7.widget.RecyclerView;
 
 import com.toshi.R;
 import com.toshi.manager.AppsManager;
-import com.toshi.manager.UserManager;
+import com.toshi.manager.RecipientManager;
 import com.toshi.model.local.ToshiEntity;
 import com.toshi.model.local.User;
 import com.toshi.model.network.App;
@@ -232,7 +232,7 @@ public class BrowseMorePresenter implements Presenter<BrowseMoreActivity> {
         }
 
         final Subscription sub =
-                getUserManager()
+                getRecipinentManager()
                 .getTopRatedPublicUsers(100)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -251,7 +251,7 @@ public class BrowseMorePresenter implements Presenter<BrowseMoreActivity> {
         }
 
         final Subscription sub =
-                getUserManager()
+                getRecipinentManager()
                 .getLatestPublicUsers(100)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -262,11 +262,11 @@ public class BrowseMorePresenter implements Presenter<BrowseMoreActivity> {
         this.subscriptions.add(sub);
     }
 
-    private UserManager getUserManager() {
+    private RecipientManager getRecipinentManager() {
         return BaseApplication
                 .get()
                 .getToshiManager()
-                .getUserManager();
+                .getRecipientManager();
     }
 
     private void handleUsers(final List<? extends ToshiEntity> users) {
