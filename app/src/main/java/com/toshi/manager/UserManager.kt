@@ -48,7 +48,6 @@ class UserManager {
         private const val USER_ID = "uid_v2"
     }
 
-    private val recipientManager by lazy { BaseApplication.get().recipientManager }
     private val isConnectedSubject by lazy { BaseApplication.get().isConnectedSubject }
 
     private val userSubject by lazy { BehaviorSubject.create<User>() }
@@ -60,25 +59,10 @@ class UserManager {
         userSubject.onNext(null)
     }
 
-    fun init(wallet: HDWallet): UserManager {
+    fun init(wallet: HDWallet): Completable {
         this.wallet = wallet
         attachConnectivityListener()
-        initCurrentUser()
-        return this
-    }
-
-    private fun initCurrentUser() {
-        val toshiId = prefs.getString(USER_ID, null)
-        toshiId?.let { fetchUserFromToshiId(it) }
-    }
-
-    private fun fetchUserFromToshiId(toshiId: String) {
-        recipientManager
-                .getUserFromToshiId(toshiId)
-                .subscribe(
-                        { updateCurrentUser(it) },
-                        { LogUtil.e(javaClass, "Error initiating current user $it") }
-                )
+        return initUser()
     }
 
     private fun attachConnectivityListener() {
@@ -87,14 +71,21 @@ class UserManager {
         // any adverse effects and it is easy to improve later.
         clearSubscriptions()
         connectivitySub = isConnectedSubject
+                .skip(1) // Skip the cached value in the subject.
                 .subscribe(
-                        { isConnected -> if (isConnected) initUser() },
+                        { handleConnectivity(it) },
                         { LogUtil.exception(javaClass, "Error while initiating user $it") }
                 )
     }
 
-    private fun initUser() {
-        when {
+    private fun handleConnectivity(isConnected: Boolean) {
+        if (isConnected) initUser()
+                .subscribeOn(Schedulers.io())
+                .subscribe({}, {})
+    }
+
+    private fun initUser(): Completable {
+        return when {
             userNeedsToRegister() -> registerNewUser()
             userNeedsToMigrate() -> migrateUser()
             SharedPrefsUtil.shouldForceUserUpdate() -> forceUpdateUser()
@@ -116,14 +107,13 @@ class UserManager {
         return userId == null || userId != expectedAddress
     }
 
-    private fun registerNewUser() {
-        getTimestamp()
+    private fun registerNewUser(): Completable {
+        return getTimestamp()
                 .flatMap { registerNewUserWithTimestamp(it) }
+                .doOnSuccess { updateCurrentUser(it) }
+                .doOnError { handleUserRegistrationFailed(it) }
                 .doOnError { LogUtil.exception(javaClass, "Error while registering user with timestamp") }
-                .subscribe(
-                        { updateCurrentUser(it) },
-                        { handleUserRegistrationFailed(it) }
-                )
+                .toCompletable()
     }
 
     private fun registerNewUserWithTimestamp(serverTime: ServerTime): Single<User> {
@@ -144,13 +134,12 @@ class UserManager {
         return userSubject.asObservable()
     }
 
-    private fun fetchUserFromNetwork() {
-        getWallet()
+    private fun fetchUserFromNetwork(): Completable {
+        return getWallet()
                 .flatMap { forceGetUser(it.ownerAddress) }
-                .subscribe(
-                        { updateCurrentUser(it) },
-                        { LogUtil.exception(javaClass, "Error while fetching user from network $it") }
-                )
+                .doOnSuccess { updateCurrentUser(it) }
+                .doOnError { LogUtil.exception(javaClass, "Error while fetching user from network $it") }
+                .toCompletable()
     }
 
     private fun getWallet(): Single<HDWallet> {
@@ -169,18 +158,17 @@ class UserManager {
         userSubject.onNext(user)
     }
 
-    private fun migrateUser() {
-        forceUpdateUser()
+    private fun migrateUser(): Completable {
         SharedPrefsUtil.setWasMigrated(true)
+        return forceUpdateUser()
     }
 
-    private fun forceUpdateUser() {
+    private fun forceUpdateUser(): Completable {
         val ud = UserDetails().setPaymentAddress(wallet.paymentAddress)
-        updateUser(ud)
-                .subscribe(
-                        { SharedPrefsUtil.setForceUserUpdate(false) },
-                        { LogUtil.exception(javaClass, "Error while updating user $it") }
-                )
+        return updateUser(ud)
+                .doOnSuccess { SharedPrefsUtil.setForceUserUpdate(false) }
+                .doOnError { LogUtil.exception(javaClass, "Error while updating user $it") }
+                .toCompletable()
     }
 
     fun updateUser(userDetails: UserDetails): Single<User> {

@@ -115,13 +115,13 @@ public class ToshiManager {
         return Completable.fromAction(() -> {
             initRealm();
             this.transactionManager.init(this.wallet);
-            this.userManager.init(this.wallet);
             this.reputationManager = new ReputationManager();
         })
         .onErrorComplete()
         .andThen(Completable.mergeDelayError(
                 this.balanceManager.init(this.wallet),
-                this.sofaMessageManager.init(this.wallet)
+                this.sofaMessageManager.init(this.wallet),
+                this.userManager.init(this.wallet)
         ))
         .doOnCompleted(() -> this.areManagersInitialised = true);
     }
