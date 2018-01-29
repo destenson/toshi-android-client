@@ -56,10 +56,6 @@ class UserManager {
     private var connectivitySub: Subscription? = null
     private lateinit var wallet: HDWallet
 
-    init {
-        userSubject.onNext(null)
-    }
-
     fun init(wallet: HDWallet): Completable {
         this.wallet = wallet
         attachConnectivityListener()
