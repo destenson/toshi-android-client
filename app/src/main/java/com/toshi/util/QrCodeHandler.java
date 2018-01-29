@@ -41,6 +41,7 @@ import com.toshi.view.activity.ViewUserActivity;
 import com.toshi.view.fragment.PaymentConfirmationFragment;
 
 import kotlin.Unit;
+import rx.Completable;
 import rx.Single;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -255,22 +256,22 @@ public class QrCodeHandler {
         final String token = result.substring(WEB_SIGNIN.length());
         final Subscription sub =
                 loginWithToken(token)
-                .doOnSuccess(__ -> playScanSound())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnCompleted(this::playScanSound)
                 .subscribe(
-                        __ -> handleLoginSuccess(),
+                        this::handleLoginSuccess,
                         this::handleLoginFailure
                 );
 
         this.subscriptions.add(sub);
     }
 
-    private Single<Void> loginWithToken(final String token) {
+    private Completable loginWithToken(final String token) {
         return BaseApplication
                 .get()
                 .getUserManager()
                 .webLogin(token)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                .subscribeOn(Schedulers.io());
     }
 
     private void playScanSound() {

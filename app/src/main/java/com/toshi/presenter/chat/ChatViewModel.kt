@@ -406,7 +406,7 @@ class ChatViewModel(private val threadId: String) : ViewModel() {
 
     fun getCurrentLocalUser(): User? {
         return userManager
-                .currentUser
+                .getCurrentUser()
                 .toBlocking()
                 .value()
     }

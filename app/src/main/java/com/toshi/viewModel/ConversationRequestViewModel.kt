@@ -58,7 +58,7 @@ class ConversationRequestViewModel : ViewModel() {
         val sub =
                 Single.zip(
                         getSofaMessageManager().loadAllUnacceptedConversations(),
-                        getUserManager().currentUser,
+                        getUserManager().getCurrentUser(),
                         { conversations, localUser -> Pair(conversations, localUser) }
                 )
                 .subscribeOn(Schedulers.io())

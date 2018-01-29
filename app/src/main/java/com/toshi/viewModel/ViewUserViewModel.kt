@@ -94,7 +94,7 @@ class ViewUserViewModel : ViewModel() {
 
     private fun isLocalUser(user: User) {
         val sub = getUserManager()
-                .currentUser
+                .getCurrentUser()
                 .map { user.toshiId == it.toshiId }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -228,7 +228,7 @@ class ViewUserViewModel : ViewModel() {
 
     private fun getLocalUser(): User? {
         return getUserManager()
-                .currentUser
+                .getCurrentUser()
                 .toBlocking()
                 .value()
     }

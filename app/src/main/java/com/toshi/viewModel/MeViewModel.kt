@@ -44,7 +44,7 @@ class MeViewModel : ViewModel() {
 
     private fun fetchUser() {
         val sub = getUserManager()
-                .currentUserObservable
+                .getCurrentUserObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(

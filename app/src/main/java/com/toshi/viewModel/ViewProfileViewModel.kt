@@ -43,7 +43,7 @@ class ViewProfileViewModel : ViewModel() {
 
     private fun fetchUser() {
         val sub = userManager
-                .userObservable
+                .getUserObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(

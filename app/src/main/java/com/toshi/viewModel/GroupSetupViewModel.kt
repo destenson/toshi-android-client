@@ -71,7 +71,7 @@ class GroupSetupViewModel : ViewModel() {
                 .setAvatar(avatar)
     }
 
-    private fun addCurrentUserToGroup(group: Group) = userManager.currentUser.map { group.addMember(it) }
+    private fun addCurrentUserToGroup(group: Group) = userManager.getCurrentUser().map { group.addMember(it) }
 
     private fun createConversationFromGroup(group: Group) = sofaMessageManager.createConversationFromGroup(group)
 

@@ -44,7 +44,7 @@ class EditProfileViewModel : ViewModel() {
 
     private fun getUser() {
         val sub = userManager
-                .userObservable
+                .getUserObservable()
                 .filter { user -> user != null }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
