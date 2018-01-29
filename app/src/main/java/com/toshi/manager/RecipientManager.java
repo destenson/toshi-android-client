@@ -150,7 +150,7 @@ public class RecipientManager {
                 .doOnError(t -> LogUtil.exception(getClass(), "fetchAndCacheFromNetworkByPaymentAddress", t));
     }
 
-    private void cacheUser(final User user) {
+    public void cacheUser(final User user) {
         this.userStore.save(user)
                 .subscribe(
                         () -> {},

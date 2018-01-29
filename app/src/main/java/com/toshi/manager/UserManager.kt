@@ -48,6 +48,7 @@ class UserManager {
         private const val USER_ID = "uid_v2"
     }
 
+    private val recipientManager by lazy { BaseApplication.get().recipientManager }
     private val isConnectedSubject by lazy { BaseApplication.get().isConnectedSubject }
 
     private val userSubject by lazy { BehaviorSubject.create<User>() }
@@ -89,7 +90,7 @@ class UserManager {
             userNeedsToRegister() -> registerNewUser()
             userNeedsToMigrate() -> migrateUser()
             SharedPrefsUtil.shouldForceUserUpdate() -> forceUpdateUser()
-            else -> fetchUserFromNetwork()
+            else -> fetchUser().toCompletable()
         }
     }
 
@@ -124,38 +125,36 @@ class UserManager {
     }
 
     private fun handleUserRegistrationFailed(throwable: Throwable) {
-        if (throwable is HttpException && throwable.code() == 400) fetchUserFromNetwork()
+        if (throwable is HttpException && throwable.code() == 400) forceFetchUserFromNetwork()
     }
 
-    private fun forceGetUser(ownerAddress: String) = IdService.getApi().forceGetUser(ownerAddress)
-
     fun getCurrentUserObservable(): Observable<User> {
-        fetchUserFromNetwork()
+        forceFetchUserFromNetwork()
         return userSubject.asObservable()
     }
 
-    private fun fetchUserFromNetwork(): Completable {
-        return getWallet()
-                .flatMap { forceGetUser(it.ownerAddress) }
+    private fun forceFetchUserFromNetwork(): Completable {
+        return IdService
+                .getApi()
+                .forceGetUser(wallet.ownerAddress)
                 .doOnSuccess { updateCurrentUser(it) }
                 .doOnError { LogUtil.exception(javaClass, "Error while fetching user from network $it") }
                 .toCompletable()
     }
 
-    private fun getWallet(): Single<HDWallet> {
-        return Single.fromCallable {
-            while (wallet == null) Thread.sleep(200)
-            wallet
-        }
-        .subscribeOn(Schedulers.io())
+    private fun fetchUser(): Single<User> {
+        return recipientManager
+                .getUserFromPaymentAddress(wallet.paymentAddress)
+                .doOnSuccess { updateCurrentUser(it) }
+                .doOnError { LogUtil.exception(javaClass, "Error while fetching user from network $it") }
     }
 
     private fun updateCurrentUser(user: User) {
         prefs.edit()
                 .putString(USER_ID, user.toshiId)
                 .apply()
-
         userSubject.onNext(user)
+        recipientManager.cacheUser(user)
     }
 
     private fun migrateUser(): Completable {
